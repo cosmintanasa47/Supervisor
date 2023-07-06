@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Supervisor.SupervisePage"
+             Title="Supervise">
+    <ScrollView>
+    <VerticalStackLayout>
+
+            <Label 
+            Text="To supervise it's super wise!"
+            TextColor="Blue"
+            FontSize="Header"
+            VerticalOptions="Start" 
+            HorizontalOptions="Center" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackLayout Grid.Column="0"  Spacing="5" Margin="10" HorizontalOptions="Center">
+                    <Button Text="Get list from service" BackgroundColor="White" x:Name="List" TextColor="Blue" Clicked="List_Clicked" BorderColor="Black"/>
+                    <ListView x:Name="AppListView" ItemsSource="{Binding AppFound}">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <ViewCell>
+                                    <StackLayout>
+                                        <Label Text="{Binding mwt}" FontSize="Medium" TextColor="Blue"/>
+                                        <CheckBox IsChecked="{Binding ch}" CheckedChanged="CheckBox_CheckedChanged" />
+                                    </StackLayout>
+                                </ViewCell>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackLayout>
+                <StackLayout Grid.Column="1" Spacing="5" Margin="10" HorizontalOptions="Center">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Row="0" Grid.Column="0" Text="Target name:" x:Name="l" TextColor="Blue"/>
+                        <Entry x:Name="en" Grid.Row="0" Grid.Column="1"
+                               Placeholder="Enter target name..." PlaceholderColor="Blue" TextColor="Blue" Margin="10" MaxLength="20" Completed="Entry_Completed"/>
+                        <Label Text="Password:" TextColor="Blue" Grid.Row="1" Grid.Column="0"/>
+                        <Entry x:Name="P1" Grid.Row="1" Grid.Column="1"
+                               IsPassword="True" Placeholder="Enter password..." PlaceholderColor="Blue" TextColor="Blue" Margin="20" MaxLength="20"/>
+                        <Label Text="Confirm password:" TextColor="Blue" Grid.Row="2" Grid.Column="0"/>
+                        <Entry x:Name="P2" Grid.Row="2" Grid.Column="1"
+                   IsPassword="True" Placeholder="Confirm password..." PlaceholderColor="Blue" TextColor="Blue" Margin="20" MaxLength="20"/>
+                        <Label Text="Start time:" TextColor="Blue" Grid.Row="3" Grid.Column="0"/>
+                        <TimePicker Visual="Default" TextColor="Blue" Format="HH:mm" x:Name="_start" Grid.Row="3" Grid.Column="1"/>
+                        <Label Text="Stop time:" TextColor="Blue" Grid.Row="4" Grid.Column="0"/>
+                        <TimePicker Visual="Default" TextColor="Blue" Format="HH:mm" x:Name="_stop" Grid.Row="4" Grid.Column="1"/>
+            </Grid>
+            </StackLayout>
+            </Grid>
+            <HorizontalStackLayout Margin="20" Spacing="20">
+                <Button x:Name="Set" Text="Set" TextColor="Blue" BackgroundColor="White" BorderColor="Black"
+                        Clicked="Set_Clicked"/>
+                <Button x:Name="Apply" Text="Apply settings" TextColor="Blue" BackgroundColor="White" BorderColor="Black"
+                        Clicked="Apply_Clicked"/>
+                <Button x:Name="Settings" Text="Save settings" TextColor="Blue" BackgroundColor="White" BorderColor="Black"
+                        Clicked="Settings_Clicked"/>
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

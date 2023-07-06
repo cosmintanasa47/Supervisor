@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="Supervisor.ProductivityPage"
+             Title="Productivity">
+<ScrollView>
+<VerticalStackLayout>
+        <Label 
+            Text="Let's set you up for productivity!"
+            TextColor="Blue"
+            VerticalOptions="Start" 
+            HorizontalOptions="Center"
+            FontSize="Header"/>
+        <Label 
+            Text="Allowed Areas of Proccesses"
+            TextColor="Blue"
+            Margin="15"
+            VerticalOptions="Start" 
+            HorizontalOptions="Start" 
+            FontSize="Large"/>
+        <StackLayout
+            Margin="20"
+            Orientation="Horizontal" 
+            VerticalOptions="Start">
+            <CheckBox 
+                IsChecked="True"
+                x:Name="Coding_Programming"/>
+            <Label 
+                TextColor="Blue"
+                Text="Coding and Programming"
+                VerticalOptions="Center" />
+        </StackLayout>
+        <StackLayout
+            Margin="20"
+            Orientation="Horizontal" 
+            VerticalOptions="Start">
+            <CheckBox 
+                IsChecked="True"
+                x:Name="Studying"/>
+            <Label 
+                TextColor="Blue"
+                Text="Studying"
+                VerticalOptions="Center" />
+        </StackLayout>
+        <StackLayout
+            Margin="20"
+            Orientation="Horizontal" 
+            VerticalOptions="Start">
+            <CheckBox 
+                IsChecked="True"
+                x:Name="Working"/>
+            <Label 
+                TextColor="Blue"
+                Text="Working ( Office, LinkedIn , Meet and so on... )"
+                VerticalOptions="Center" />
+        </StackLayout>
+
+        <Label
+            Text="Unallowed/Limited Areas of Proccesses"
+            Margin="15"
+            TextColor="Blue"
+            VerticalOptions="Start" 
+            HorizontalOptions="Start" 
+            FontSize="Large"
+            />
+        <StackLayout
+            Margin="20"
+            Orientation="Horizontal" 
+            VerticalOptions="Start">
+            <CheckBox 
+                IsChecked="False"
+                x:Name="Social_Media"/>
+            <Label 
+                Text="Social Media"
+                TextColor="Blue"
+                VerticalOptions="Center" />
+        </StackLayout>
+        <StackLayout
+            Margin="20"
+            Orientation="Horizontal" 
+            VerticalOptions="Start">
+            <CheckBox 
+                IsChecked="False"
+                x:Name="Entertainment"/>
+            <Label 
+                TextColor="Blue"
+                Text="Entertainment"
+                VerticalOptions="Center" />
+        </StackLayout>
+        <StackLayout
+            Margin="20"
+            Orientation="Horizontal" 
+            VerticalOptions="Start">
+            <CheckBox 
+                IsChecked="False"
+                x:Name="Gaming"/>
+            <Label 
+                TextColor="Blue"
+                Text="Gaming"
+                VerticalOptions="Center" />
+        </StackLayout>
+       
+            <Label
+            Text="Restricted folder (process will be terminated)"
+            TextColor="Blue"
+            Margin="15"
+            VerticalOptions="Start" 
+            HorizontalOptions="Start" 
+            FontSize="Large"/>
+            <Button
+            x:Name="Restrict"
+            Text="Add Restriction"
+            TextColor="Blue"
+            BackgroundColor="White"
+            BorderColor="Black"
+            Margin="15"
+            VerticalOptions="Start"
+            HorizontalOptions="Start"
+            FontSize="Body"
+            Clicked="Restrict_Clicked"/>
+            <ListView x:Name="AppListView" ItemsSource="{Binding AppList}" Margin="15" VerticalOptions="Start" HorizontalOptions="Start">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <ViewCell>
+                            <StackLayout
+                                Margin="20"
+                                Orientation="Vertical" 
+                                HorizontalOptions="Start"
+                                VerticalOptions="Start">
+                                <Label Text="{Binding Name}" FontSize="Medium" TextColor="Blue"/>
+                                <Label Text="{Binding Path}" FontSize="Caption" TextColor="Blue"/>
+                            </StackLayout>
+                            <ViewCell.ContextActions>
+                                <MenuItem Text="Delete"
+                                          Clicked="Delete_Clicked"
+                                          CommandParameter="{Binding .}"></MenuItem>
+                            </ViewCell.ContextActions> 
+                        </ViewCell>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+
+            <Label
+            Text="Daily Maximum Time Spent on Unallowed Type Of Processes"
+            Margin="15"
+            TextColor="Blue"
+            VerticalOptions="Start" 
+            HorizontalOptions="Start" 
+            FontSize="Large"
+            />
+            <VerticalStackLayout>
+                <HorizontalStackLayout Spacing="10" Margin="20"
+                                   VerticalOptions="Start" HorizontalOptions="Start">
+                <Label Text="Set Daily Gaming Time Limit:  " 
+                       TextColor="Blue"/>
+                <Entry
+                    Placeholder="0"
+                    PlaceholderColor="Blue"
+                    Keyboard="Numeric"
+                    VerticalOptions="Center"/>
+                <Label 
+                    Text="minutes"
+                    VerticalOptions="End"
+                    TextColor="Blue"/>
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="10" Margin="20"
+                                   VerticalOptions="Start" HorizontalOptions="Start">
+                <Label Text="Set Daily Entertainment Time Limit:  " 
+                       TextColor="Blue"/>
+                <Entry
+                    Placeholder="0"
+                    PlaceholderColor="Blue"
+                    Keyboard="Numeric"
+                    VerticalOptions="Center"/>
+                <Label 
+                    Text="minutes"
+                    VerticalOptions="End"
+                    TextColor="Blue"/>
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="10" Margin="20"
+                                   VerticalOptions="Start" HorizontalOptions="Start">
+                <Label Text="Set Daily Social Media Time Limit:  " 
+                       TextColor="Blue"/>
+                <Entry
+                    Placeholder="0"
+                    PlaceholderColor="Blue"
+                    Keyboard="Numeric"
+                    VerticalOptions="Center"/>
+                <Label 
+                    Text="minutes"
+                    TextColor="Blue"
+                    VerticalOptions="End"/>
+            </HorizontalStackLayout>
+            </VerticalStackLayout>
+
+            <HorizontalStackLayout Margin="20" Spacing="20" VerticalOptions="Start" HorizontalOptions="Start">
+                <Button
+                 x:Name="Settings"
+                Text="Save Settings"
+                BackgroundColor="White"
+                TextColor="Blue"
+                Clicked="Settings_Clicked"
+                BorderColor="Black"
+                />
+                <Button
+                 x:Name="Send"
+                Text="Send List"
+                BackgroundColor="White"
+                TextColor="Blue"
+                Clicked="Send_Clicked"
+                BorderColor="Black"
+                />
+                <VerticalStackLayout>
+                    <Button
+                x:Name="Service"
+                Text="Start Service"
+                BackgroundColor="White"
+                TextColor="Blue"
+                Clicked="Service_Clicked"
+                BorderColor="Black"
+                VerticalOptions="Start"
+                HorizontalOptions="Start"
+                />
+                <Label
+                x:Name="Service_State"
+                Text="Service is Stopped"
+                TextColor="Blue"/>
+                </VerticalStackLayout>
+            </HorizontalStackLayout>
+            <StackLayout
+                Margin="20"
+                Orientation="Horizontal"
+                VerticalOptions="Start">
+                <Picker Title="Select Date Range" SelectedIndexChanged="Picker_SelectedIndexChanged">
+                    <Picker.ItemsSource>
+                        <x:Array Type="{x:Type x:String}">
+                            <x:String>Today</x:String>
+                            <x:String>Last Week</x:String>
+                            <x:String>Last Month</x:String>
+                        </x:Array>
+                    </Picker.ItemsSource>
+                </Picker>
+                <Button
+                x:Name="Statistic"
+                Text="See statistic"
+                BackgroundColor="White"
+                Margin="10"
+                TextColor="Blue"
+                BorderColor="Black"
+                Clicked="Statistic_Clicked"
+                VerticalOptions="Center"
+                />
+            </StackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
