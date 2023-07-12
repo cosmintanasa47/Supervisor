@@ -5,14 +5,8 @@ using System.IO;
 using System.IO.Pipes;
 using System.Diagnostics;
 using Microsoft.Maui.Controls;
-using CommunityToolkit.Maui.Alerts;
-using CommunityToolkit.Maui.Storage;
-using System.Diagnostics;
-using CommunityToolkit.Maui.Core;
-//using Microsoft.Maui.Essentials;
 using System.Collections.ObjectModel;
-using System.ServiceProcess;
-using Microsoft.ML.Tokenizers;
+using System.Net.Mail;
 
 public partial class SupervisePage : ContentPage
 {
@@ -43,6 +37,8 @@ public partial class SupervisePage : ContentPage
 
     bool set = false;
 
+    List<string> unallowed = new List<string>();
+
     public void Pipe_S()
     {
         List.IsEnabled = false;
@@ -56,8 +52,8 @@ public partial class SupervisePage : ContentPage
             }
                 using (StreamReader reader = new StreamReader(pipeClient))
                 {
-                    string[] mwt = reader.ReadLine().Split("|");
-                    foreach (string s in mwt)
+                    while(reader.ReadLine() != null) if(!unallowed.Contains(reader.ReadLine())) unallowed.Add(reader.ReadLine());
+                    foreach (string s in unallowed)
                     {
                         AppF app = AppFound.FirstOrDefault(x => x.mwt == s);
                        if((s.Length > 0)&&(app == null)) { Add(s); }
@@ -92,7 +88,7 @@ public partial class SupervisePage : ContentPage
     }
 
     List<string> titles = new List<string>();
-    string target,pass,start,stop;
+    string target,email,pass,start,stop;
 
     public void Send_Service()
     {
@@ -115,6 +111,8 @@ public partial class SupervisePage : ContentPage
                 writer.Flush();
                 writer.WriteLine(pass);
                 writer.Flush();
+                writer.WriteLine(email);
+                writer.Flush();
                 writer.WriteLine(start);
                 writer.Flush();
                 writer.WriteLine(stop);
@@ -130,28 +128,46 @@ public partial class SupervisePage : ContentPage
         }
     }
 
+    private void Stop_Clicked(object sender, EventArgs e)
+    {
+        using (NamedPipeClientStream pipeClient = new NamedPipeClientStream("myserver", "mypipe", PipeDirection.InOut))
+        {
+            using (StreamReader reader = new StreamReader(pipeClient))
+            {
+                if(reader.ReadLine() == "Supervising")
+                    using (StreamWriter writer = new StreamWriter(pipeClient))
+                    { writer.WriteLine("Stop_supervise"); writer.Flush(); }
+            }
+        }
+    }
+
     private void Set_Clicked(object sender, EventArgs e)
     {
         if ((P1.Text == P2.Text)&&(P1.Text.Length > 0))
         {
             if (en.Text.Length > 0)
             {
-                if (_start.Time <= _stop.Time)
+                if (Email() == true)
                 {
-                    foreach (AppF app in AppFound)
+                    email = Email_entry.Text;
+                    if (_start.Time <= _stop.Time)
                     {
-                        if (app.ch == true)
+                        foreach (AppF app in AppFound)
                         {
-                            titles.Add(app.mwt);
+                            if (app.ch == true)
+                            {
+                                titles.Add(app.mwt);
+                            }
                         }
+                        target = en.Text;
+                        pass = P1.Text;
+                        start = _start.ToString();
+                        stop = _stop.ToString();
+                        Send_Service();
                     }
-                    target = en.Text;
-                    pass = P1.Text;
-                    start = _start.ToString();
-                    stop = _stop.ToString();
-                    Send_Service();
+                    else { DisplayAlert("Error", "Invalid stop time!", "OK"); }
                 }
-                else { DisplayAlert("Error", "Invalid stop time!", "OK"); }
+                else DisplayAlert("Error", "Invalid email address!", "OK");
             }
             else { DisplayAlert("Error", "Invalid target name!", "OK"); }
         }
@@ -161,10 +177,23 @@ public partial class SupervisePage : ContentPage
         }
     }
 
+    public bool Email()
+    {
+        bool exists = true;
+        try
+        {
+            var emailAddress = new MailAddress(email);
+        }
+        catch
+        { exists = false; }
+        return exists;
+    }
+
     private void Apply_Clicked(object sender, EventArgs e)
     {
         en.Text = Preferences.Default.Get("target_name",":");
         P1.Text = Preferences.Default.Get("password","");
+        Email_entry.Text = Preferences.Default.Get("address", "3mail");
         _start.Time = TimeSpan.Parse(Preferences.Default.Get("start_time", ""));
         _stop.Time = TimeSpan.Parse(Preferences.Default.Get("stop_time", ""));
     }
@@ -176,15 +205,18 @@ public partial class SupervisePage : ContentPage
         {
             if (en.Text.Length > 0)
             {
-                if (_start.Time <= _stop.Time)
-                {
-                   // Preferences.Default.Clear();
-                    Preferences.Default.Set("target_name", en.Text);
-                    Preferences.Default.Set("password", P1.Text);
-                    Preferences.Default.Set("start_time", _start.ToString());
-                    Preferences.Default.Set("stop_time", _stop.ToString());
-                }
-                else { DisplayAlert("Error", "Invalid stop time!", "OK"); }
+                if (Email() == true)
+                    if (_start.Time <= _stop.Time)
+                    {
+                        // Preferences.Default.Clear();
+                        Preferences.Default.Set("target_name", en.Text);
+                        Preferences.Default.Set("password", P1.Text);
+                        Preferences.Default.Set("address",email);
+                        Preferences.Default.Set("start_time", _start.ToString());
+                        Preferences.Default.Set("stop_time", _stop.ToString());
+                    }
+                    else { DisplayAlert("Error", "Invalid stop time!", "OK"); }
+                else DisplayAlert("Error","Invalid email address!","OK");
             }
             else { DisplayAlert("Error", "Invalid target name!", "OK"); }
         }

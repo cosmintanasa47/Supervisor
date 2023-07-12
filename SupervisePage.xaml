@@ -39,6 +39,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -52,10 +53,12 @@
                         <Label Text="Confirm password:" TextColor="Blue" Grid.Row="2" Grid.Column="0"/>
                         <Entry x:Name="P2" Grid.Row="2" Grid.Column="1"
                    IsPassword="True" Placeholder="Confirm password..." PlaceholderColor="Blue" TextColor="Blue" Margin="20" MaxLength="20"/>
-                        <Label Text="Start time:" TextColor="Blue" Grid.Row="3" Grid.Column="0"/>
-                        <TimePicker Visual="Default" TextColor="Blue" Format="HH:mm" x:Name="_start" Grid.Row="3" Grid.Column="1"/>
-                        <Label Text="Stop time:" TextColor="Blue" Grid.Row="4" Grid.Column="0"/>
-                        <TimePicker Visual="Default" TextColor="Blue" Format="HH:mm" x:Name="_stop" Grid.Row="4" Grid.Column="1"/>
+                        <Label Text="Email address:" TextColor="Blue" Grid.Row="3" Grid.Column="0"/>
+                        <Entry x:Name="Email_entry" Placeholder="Enter email address" PlaceholderColor="Blue" TextColor="Blue" Margin="20" Grid.Row="3" Grid.Column="1"/>
+                        <Label Text="Start time:" TextColor="Blue" Grid.Row="4" Grid.Column="0"/>
+                        <TimePicker Visual="Default" TextColor="Blue" Format="HH:mm" x:Name="_start" Grid.Row="4" Grid.Column="1"/>
+                        <Label Text="Stop time:" TextColor="Blue" Grid.Row="5" Grid.Column="0"/>
+                        <TimePicker Visual="Default" TextColor="Blue" Format="HH:mm" x:Name="_stop" Grid.Row="5" Grid.Column="1"/>
             </Grid>
             </StackLayout>
             </Grid>
@@ -66,6 +69,8 @@
                         Clicked="Apply_Clicked"/>
                 <Button x:Name="Settings" Text="Save settings" TextColor="Blue" BackgroundColor="White" BorderColor="Black"
                         Clicked="Settings_Clicked"/>
+                <Button x:Name="Stop" Text="Stop supervising" TextColor="Blue" BackgroundColor="White" BorderColor="Black"
+                        Clicked="Stop_Clicked"/>
             </HorizontalStackLayout>
         </VerticalStackLayout>
     </ScrollView>

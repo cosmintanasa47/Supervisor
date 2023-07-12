@@ -1,22 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.ServiceProcess;
+﻿using System.Text;
 using System.Security.Cryptography;
 using System.Diagnostics;
-using System.ComponentModel.Design;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Globalization;
-using Newtonsoft.Json.Linq;
-using SkiaSharp;
-using System.Drawing.Imaging;
-using System.Drawing;
-using System.Drawing;
 using System.IO.Pipes;
-using Google.Protobuf.WellKnownTypes;
-using Microsoft.ML.Trainers;
+using System.Net.Mail;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Work_serv
 {
@@ -27,10 +14,6 @@ namespace Work_serv
         {
             this.logger = _logger;
         }
-
-
-        //===================================================================================
-        //   CREATE FOLDER,TEXT FILE AND CHECK THE OTHER FILES
 
         public string filePath;
 
@@ -45,7 +28,6 @@ namespace Work_serv
 
             string fileName = DateTime.Now.ToString("ddMMyyyy") + ".txt";
             filePath = Path.Combine(folderPath, fileName);
-            //File.WriteAllText(filePath, "Your data to store\n");
 
             string[] files = Directory.GetFiles(folderPath);
             foreach (string file in files)
@@ -69,24 +51,26 @@ namespace Work_serv
            time.Start();
             void Time_pass()
             {
-                // using (Aes new_aes = Aes.Create())
-                // {
-                // byte[] en = null;
-                // new_aes.KeySize = 256;
-                string text = null;
-                foreach (ProcessActivity _process in processActivities)
-                {
-                        text = text + _process.MainWindowTitle.ToString() +"\n"
-                                   // + _process.Type + "\n"
-                                    + _process.StartTime.ToString("dd/MM/yyyy HH:mm:ss")+"\n"
-                                    + _process.ActiveDuration.ToString(@"hh\:mm\:ss") + "\n";
+                 using (Aes new_aes = Aes.Create())
+                 {
+                 byte[] en = null;
+                 new_aes.KeySize = 256;
+                 string text = null;
+                 foreach (ProcessActivity _process in processActivities)
+                 {
+                    text = text + _process.MainWindowTitle.ToString() + "\n"
+                                // + _process.Type + "\n"
+                                + _process.StartTime.ToString("dd/MM/yyyy HH:mm:ss") + "\n"
+                                + _process.ActiveDuration.ToString(@"hh\:mm\:ss") + "\n";
+                 }
+                    File.WriteAllText(filePath, text);
+                    // en = Encrypt(text, new_aes.Key, new_aes.IV);
+                    // File.WriteAllText(filePath, en.ToString());
+                    //en = Encrypt(text, new_aes.Key, new_aes.IV);
+                    // Console.Write($"{Encoding.UTF8.GetString(en)}");
+                    // string dec = Decrypt(en,new_aes.Key,new_aes.IV);
+                    // Console.Write($"{dec}");
                 }
-                File.WriteAllText(filePath, text);
-                // en = Encrypt(text, new_aes.Key, new_aes.IV);
-                // Console.Write($"{Encoding.UTF8.GetString(en)}");
-                // string dec = Decrypt(en,new_aes.Key,new_aes.IV);
-                //  Console.Write($"{dec}");
-                // }
             }
         }
         
@@ -102,62 +86,74 @@ namespace Work_serv
         List<ProcessActivity> processActivities = new List<ProcessActivity>();
 
         List<string> titles = new List<string>();
-        string target, pass; 
+        string target, pass,email; 
         TimeSpan start, stop;
 
-        public void Pipe_S()
+        public async Task Pipe_S()
         {
+            NamedPipeServerStream pipeServer = new NamedPipeServerStream("mypipe");
+            await pipeServer.WaitForConnectionAsync();
+            var reader = new StreamReader(pipeServer);
+            StreamWriter writer = new StreamWriter(pipeServer);
+
             while (test == false)
             {
-                using (NamedPipeServerStream pipeServer = new NamedPipeServerStream("mypipe"))
-                {
-                    pipeServer.WaitForConnection();
-
-                    using (StreamReader reader = new StreamReader(pipeServer))
-                    {
-                        string message = reader.ReadLine();
+                        string message = await reader.ReadLineAsync();
                         if (message == "StartSendingData")
                         {
-                            using (StreamWriter writer = new StreamWriter(pipeServer))
+                            foreach (ProcessActivity p in processActivities)
                             {
-                                string s = null;
-                                foreach(ProcessActivity p in processActivities)
-                                {
-                                    s = s + p.MainWindowTitle + "|";
-                                }
-                                writer.WriteLine(s);
-                                writer.Flush();
-                            }
-
-                            using (StreamWriter writer = new StreamWriter(pipeServer))
-                            {
-                                writer.WriteLine("DataReceived");
-                                writer.Flush();
+                                await writer.WriteLineAsync(p.MainWindowTitle);
+                                await writer.FlushAsync();
                             }
                         }
                         else if (message == "Title_IN")
                         {
                             titles.Clear();
-                            if(message != "Title_OUT")
+                            while(message != "Title_OUT")
                             {
                                 if(!titles.Contains(message))
                                 titles.Add(message);
                             }
-                            else
-                            {
-                                reader.ReadLine();
-                                target = reader.ReadLine();
-                                pass = reader.ReadLine();
-                                start = TimeSpan.Parse(reader.ReadLine());
-                                stop = TimeSpan.Parse(reader.ReadLine());
+                                await reader.ReadLineAsync();
+                                target = await reader.ReadLineAsync();
+                                pass = await reader.ReadLineAsync();
+                                email = await reader.ReadLineAsync();
+                                start = TimeSpan.Parse(await reader.ReadLineAsync());
+                                stop = TimeSpan.Parse(await reader.ReadLineAsync());
+                                writer.WriteLine("DataReceived"); writer.Flush();
                                 Supervise();
+                        }
+                        else if(message == "Start_P_List")
+                        {
+                            while(message != "Stop_P_List")
+                            {
+                                kill.Add(message);
+                            }
+                            if(message == "Stop_P_List")
+                            {
+                                   await writer.WriteLineAsync("List_Received");
+                                   await writer.FlushAsync();
                             }
                         }
-                    }
+            }
+            if(test == true)
+            {
+                await writer.WriteLineAsync("Supervising");
+                await writer.FlushAsync();
+                if(reader.ReadLine() == "Stop_supervise")
+                {
+                    Send_Email_with_File();
+                    test = false;
                 }
             }
+
+            writer.Dispose();
+            reader.Dispose();
+            pipeServer.Dispose();
         }
 
+        List<string> kill = new List<string>();
         List<ProcessActivity> Bad = new List<ProcessActivity>();
 
         public bool test = false;
@@ -174,8 +170,11 @@ namespace Work_serv
                 until_stop.Start();
                 void Time_pass1()
                 {
-                    test = false;
-
+                    if (test == true)
+                    {
+                        Send_Email_with_File();
+                        test = false;
+                    }
                     until_stop.Stop();
                 }
                 until_start.Stop();
@@ -188,103 +187,111 @@ namespace Work_serv
             Process[] processes = Process.GetProcesses();
             foreach (Process process in processes)
             {
-                if ((process.MainWindowTitle.Length > 0)&&(!process.MainWindowTitle.Equals("Settings")) && (!process.MainWindowTitle.Equals("Microsoft Text Input Application")))
-                {
-                    DateTime startTime = process.StartTime;
-                    TimeSpan activeDuration;
-                    if (!process.HasExited)
+                    if ((process.MainWindowTitle.Length > 0) && (!process.MainWindowTitle.Equals("Settings")) && (!process.MainWindowTitle.Equals("Microsoft Text Input Application")))
                     {
-                        activeDuration = DateTime.Now - startTime; 
-                    }
-                    else
-                    {
-                        DateTime exitTime = process.ExitTime;
-                        activeDuration = exitTime - startTime;
-                    }
-                    ProcessActivity activity = new ProcessActivity
-                    {
-                        MainWindowTitle = process.MainWindowTitle,
-                       // Type = result.PredictedLabel,
-                        StartTime = startTime,
-                        ActiveDuration = activeDuration,
-                    };
-                    bool found = false;
-                    if(test == false)
-                    {
-                        foreach (var _item in processActivities.Where(x => x.MainWindowTitle == activity.MainWindowTitle))
-                            found = true;
-                        if (found == false)
+                        if (!kill.Contains(process.ProcessName))
                         {
-                            //  var sampleData = new ML_Model.ModelInput()
-                            //  {
-                            //     Col1 = @process.MainWindowTitle,
-                            //  };
-                            // var result = ML_Model.Predict(sampleData);
-                            // activity.Type = result.PredictedLabel;
-                            processActivities.Add(activity);
-                        }
-                        else
-                        {
-                            TimeSpan Time = TimeSpan.FromMilliseconds(interval);
-                            foreach (var item in processActivities.Where(x => x.MainWindowTitle == activity.MainWindowTitle))
+                            DateTime startTime = process.StartTime;
+                            TimeSpan activeDuration;
+                            if (!process.HasExited)
                             {
-                                item.ActiveDuration = item.ActiveDuration + Time;
+                                activeDuration = DateTime.Now - startTime;
                             }
-                        }
-                    }
-                    else
-                    {
-                        foreach (var _item in Bad.Where(x => x.MainWindowTitle == activity.MainWindowTitle))
-                            found = true;
-                        if ((found == false)&&(!titles.Contains(activity.MainWindowTitle)))
-                        {
-                            //  var sampleData = new ML_Model.ModelInput()
-                            //  {
-                            //     Col1 = @process.MainWindowTitle,
-                            //  };
-                            // var result = ML_Model.Predict(sampleData);
-                            // activity.Type = result.PredictedLabel;
-                            Bad.Add(activity);
-                        }
-                        else
-                        {
-                            TimeSpan Time = TimeSpan.FromMilliseconds(interval);
-                            foreach (var item in Bad.Where(x => x.MainWindowTitle == activity.MainWindowTitle))
+                            else
                             {
-                                item.ActiveDuration = item.ActiveDuration + Time;
+                                DateTime exitTime = process.ExitTime;
+                                activeDuration = exitTime - startTime;
                             }
-                        }
+                            ProcessActivity activity = new ProcessActivity
+                            {
+                                MainWindowTitle = process.MainWindowTitle,
+                                // Type = result.PredictedLabel,
+                                StartTime = startTime,
+                                ActiveDuration = activeDuration,
+                            };
+                            bool found = false;
+                            if (test == false)
+                            {
+                                foreach (var _item in processActivities.Where(x => x.MainWindowTitle == activity.MainWindowTitle))
+                                    found = true;
+                                if (found == false)
+                                {
+                                    //  var sampleData = new ML_Model.ModelInput()
+                                    //  {
+                                    //     Col1 = @process.MainWindowTitle,
+                                    //  };
+                                    // var result = ML_Model.Predict(sampleData);
+                                    // activity.Type = result.PredictedLabel;
+                                    processActivities.Add(activity);
+                                }
+                                else
+                                {
+                                    TimeSpan Time = TimeSpan.FromMilliseconds(interval);
+                                    foreach (var item in processActivities.Where(x => x.MainWindowTitle == activity.MainWindowTitle))
+                                    {
+                                        item.ActiveDuration = item.ActiveDuration + Time;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                foreach (var _item in Bad.Where(x => x.MainWindowTitle == activity.MainWindowTitle))
+                                    found = true;
+                                if ((found == false) && (!titles.Contains(activity.MainWindowTitle)))
+                                {
+                                    //  var sampleData = new ML_Model.ModelInput()
+                                    //  {
+                                    //     Col1 = @process.MainWindowTitle,
+                                    //  };
+                                    // var result = ML_Model.Predict(sampleData);
+                                    // activity.Type = result.PredictedLabel;
+                                    Bad.Add(activity);
+                                }
+                                else
+                                {
+                                    TimeSpan Time = TimeSpan.FromMilliseconds(interval);
+                                    foreach (var item in Bad.Where(x => x.MainWindowTitle == activity.MainWindowTitle))
+                                    {
+                                        item.ActiveDuration = item.ActiveDuration + Time;
+                                    }
+                                }
 
-                        foreach (var _item in processActivities.Where(x => x.MainWindowTitle == activity.MainWindowTitle))
-                            found = true;
-                        if (found == false)
-                        {
-                            //  var sampleData = new ML_Model.ModelInput()
-                            //  {
-                            //     Col1 = @process.MainWindowTitle,
-                            //  };
-                            // var result = ML_Model.Predict(sampleData);
-                            // activity.Type = result.PredictedLabel;
-                            processActivities.Add(activity);
-                        }
-                        else
-                        {
-                            TimeSpan Time = TimeSpan.FromMilliseconds(interval);
-                            foreach (var item in processActivities.Where(x => x.MainWindowTitle == activity.MainWindowTitle))
-                            {
-                                item.ActiveDuration = item.ActiveDuration + Time;
+                                foreach (var _item in processActivities.Where(x => x.MainWindowTitle == activity.MainWindowTitle))
+                                    found = true;
+                                if (found == false)
+                                {
+                                    //  var sampleData = new ML_Model.ModelInput()
+                                    //  {
+                                    //     Col1 = @process.MainWindowTitle,
+                                    //  };
+                                    // var result = ML_Model.Predict(sampleData);
+                                    // activity.Type = result.PredictedLabel;
+                                    processActivities.Add(activity);
+                                }
+                                else
+                                {
+                                    TimeSpan Time = TimeSpan.FromMilliseconds(interval);
+                                    foreach (var item in processActivities.Where(x => x.MainWindowTitle == activity.MainWindowTitle))
+                                    {
+                                        item.ActiveDuration = item.ActiveDuration + Time;
+                                    }
+                                }
                             }
                         }
+                        else process.Kill();
                     }
-                }
             }
         }
 
         static int interval = 30;
+        int pipe = 0;
+        int maintenance = 0;
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while(!stoppingToken.IsCancellationRequested)
+            if (maintenance == 0) { Maintenance(); maintenance++; }
+            if (pipe == 0) { Pipe_S(); pipe++; }
+            while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
@@ -297,7 +304,6 @@ namespace Work_serv
         public override Task StartAsync(CancellationToken cancellationToken)
         {
             Get_Timer();
-            Maintenance();
             logger.LogInformation("Started");
             return base.StartAsync(cancellationToken);
         }
@@ -342,6 +348,39 @@ namespace Work_serv
                 }
             }
             return simple_text;
+        }
+
+        public void Send_Email_with_File()
+        {
+            string folderName = "Supervise";
+            string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folderName);
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            string fileName = target + " - " + start + ".txt";
+            string filePath = Path.Combine(folderPath, fileName);
+
+            string text = null;
+            foreach (ProcessActivity _process in Bad)
+            {
+                text = text + _process.MainWindowTitle.ToString() + "\n"
+                         // + _process.Type + "\n"
+                            + _process.StartTime.ToString("dd/MM/yyyy HH:mm:ss") + "\n"
+                            + _process.ActiveDuration.ToString(@"hh\:mm\:ss") + "\n";
+            }
+            File.WriteAllText(filePath, text);
+
+            MailMessage mail = new MailMessage("supervisoremail0@gmail.com", email, target + " - " + start , "All the unpermitted processes are in the text file.");
+            mail.Attachments.Add(new Attachment(filePath));
+            SmtpClient support_email = new SmtpClient("smtp.gmail.com");
+            support_email.Port = 587;
+            support_email.UseDefaultCredentials = false;
+            support_email.Credentials = new System.Net.NetworkCredential("supervisoremail0", "fdkoztcrfnqjepui");
+            support_email.EnableSsl = true;
+            support_email.DeliveryMethod = SmtpDeliveryMethod.Network;
+            support_email.Send(mail);
         }
     }
 }

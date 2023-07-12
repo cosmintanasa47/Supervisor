@@ -14,11 +14,8 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.1" />
     <PackageReference Include="Microsoft.ML" Version="3.0.0-preview.23266.6" />
     <PackageReference Include="Microsoft.ML.TorchSharp" Version="0.21.0-preview.23266.6" />
+    <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="TorchSharp-cpu" Version="0.99.5" />
-  </ItemGroup>
-  <ItemGroup Label="ML_Model">
-    <None Include="ML_Model.mlnet">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 </Project>

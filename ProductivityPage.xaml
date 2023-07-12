@@ -197,14 +197,6 @@
 
             <HorizontalStackLayout Margin="20" Spacing="20" VerticalOptions="Start" HorizontalOptions="Start">
                 <Button
-                 x:Name="Settings"
-                Text="Save Settings"
-                BackgroundColor="White"
-                TextColor="Blue"
-                Clicked="Settings_Clicked"
-                BorderColor="Black"
-                />
-                <Button
                  x:Name="Send"
                 Text="Send List"
                 BackgroundColor="White"
@@ -253,6 +245,7 @@
                 VerticalOptions="Center"
                 />
             </StackLayout>
+            <Label x:Name="st" Text="" TextColor="Blue"/>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>
