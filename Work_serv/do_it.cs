@@ -1,8 +1,11 @@
-﻿using System.Text;
+using System.Text;
 using System.Security.Cryptography;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Net.Mail;
+using System.Threading;
+using System.Drawing;
+using System.Drawing.Imaging;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace Work_serv
@@ -19,8 +22,10 @@ namespace Work_serv
 
         public void Maintenance()
         {
+            try { 
             string folderName = "Days";
             string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folderName);
+          //  Console.WriteLine(folderPath);
             if (!Directory.Exists(folderPath))
             {
                 Directory.CreateDirectory(folderPath);
@@ -30,23 +35,26 @@ namespace Work_serv
             filePath = Path.Combine(folderPath, fileName);
 
             string[] files = Directory.GetFiles(folderPath);
-            foreach (string file in files)
+                logger.LogInformation($"Folder Path: {folderPath}");
+                foreach (string file in files)
             {
                 DateTime fileDate = File.GetCreationTime(file);
                 TimeSpan difference = DateTime.Now - fileDate;
-
+                    logger.LogInformation($"Diferenta: {difference.TotalDays}");
                 int dayLimit = 30;
 
                 if (difference.TotalDays > dayLimit)
                 {
                     File.Delete(file);
+                        logger.LogInformation($"da delete la {file}");
                 }
             }
+            }catch(Exception ex) { logger.LogError($"ERROR-delete maintenance: {ex}"); }
         }
 
         public void Get_Timer()
         {
-           var time = new System.Timers.Timer(3 * 1000);
+           var time = new System.Timers.Timer(5 * 1000);
            time.Elapsed += (sender, e) => Time_pass();
            time.Start();
             void Time_pass()
@@ -56,14 +64,27 @@ namespace Work_serv
                  byte[] en = null;
                  new_aes.KeySize = 256;
                  string text = null;
-                 foreach (ProcessActivity _process in processActivities)
-                 {
-                    text = text + _process.MainWindowTitle.ToString() + "\n"
-                                // + _process.Type + "\n"
-                                + _process.StartTime.ToString("dd/MM/yyyy HH:mm:ss") + "\n"
-                                + _process.ActiveDuration.ToString(@"hh\:mm\:ss") + "\n";
-                 }
-                    File.WriteAllText(filePath, text);
+                 logger.LogInformation("WRITE:");
+                    try
+                    {
+                        foreach (ProcessActivity _process in processActivities)
+                        {
+                            logger.LogInformation("1");
+                            text = text + _process.MainWindowTitle.ToString() + "\n"
+                                        // + _process.Type + "\n"
+                                        + _process.StartTime.ToString("dd/MM/yyyy HH:mm:ss") + "\n"
+                                        + _process.ActiveDuration.ToString(@"hh\:mm\:ss") + "\n";
+                            if (string.IsNullOrEmpty(text)) logger.LogError("text e gol");
+                            logger.LogInformation("2");
+                        }
+                        try { File.WriteAllText(filePath, text); }
+                        catch(Exception ex) { logger.LogError($"ERROR: {ex}"); }
+                        logger.LogInformation("3");
+                    }
+                    catch(Exception ex)
+                    {
+                        logger.LogError($"ERROR: {ex}");
+                    }
                     // en = Encrypt(text, new_aes.Key, new_aes.IV);
                     // File.WriteAllText(filePath, en.ToString());
                     //en = Encrypt(text, new_aes.Key, new_aes.IV);
@@ -89,68 +110,91 @@ namespace Work_serv
         string target, pass,email; 
         TimeSpan start, stop;
 
-        public async Task Pipe_S()
+        public async void Pipe_S()
         {
-            NamedPipeServerStream pipeServer = new NamedPipeServerStream("mypipe");
-            await pipeServer.WaitForConnectionAsync();
-            var reader = new StreamReader(pipeServer);
-            StreamWriter writer = new StreamWriter(pipeServer);
-
-            while (test == false)
+            while (true)
+            { 
+            // logger.LogInformation("Intra in PIPE");
+            using (NamedPipeServerStream pipeServer = new NamedPipeServerStream("mypipe"))
             {
-                        string message = await reader.ReadLineAsync();
-                        if (message == "StartSendingData")
-                        {
-                            foreach (ProcessActivity p in processActivities)
-                            {
-                                await writer.WriteLineAsync(p.MainWindowTitle);
-                                await writer.FlushAsync();
-                            }
-                        }
-                        else if (message == "Title_IN")
-                        {
-                            titles.Clear();
-                            while(message != "Title_OUT")
-                            {
-                                if(!titles.Contains(message))
-                                titles.Add(message);
-                            }
-                                await reader.ReadLineAsync();
-                                target = await reader.ReadLineAsync();
-                                pass = await reader.ReadLineAsync();
-                                email = await reader.ReadLineAsync();
-                                start = TimeSpan.Parse(await reader.ReadLineAsync());
-                                stop = TimeSpan.Parse(await reader.ReadLineAsync());
-                                writer.WriteLine("DataReceived"); writer.Flush();
-                                Supervise();
-                        }
-                        else if(message == "Start_P_List")
-                        {
-                            while(message != "Stop_P_List")
-                            {
-                                kill.Add(message);
-                            }
-                            if(message == "Stop_P_List")
-                            {
-                                   await writer.WriteLineAsync("List_Received");
-                                   await writer.FlushAsync();
-                            }
-                        }
-            }
-            if(test == true)
-            {
-                await writer.WriteLineAsync("Supervising");
-                await writer.FlushAsync();
-                if(reader.ReadLine() == "Stop_supervise")
+                    logger.LogInformation("Asteapta");
+                await pipeServer.WaitForConnectionAsync();
+                using (var reader = new StreamReader(pipeServer))
                 {
-                    Send_Email_with_File();
-                    test = false;
-                }
-            }
+                    using (StreamWriter writer = new StreamWriter(pipeServer))
+                    {
+                        if (pipeServer.IsConnected)
+                        {
+                            while (test == false)
+                            {
+                                string all =  reader.ReadToEnd();
+                                string message = null;
+                                using (StringReader sr = new StringReader(all))
+                                    if (sr.ReadLine() != null)
+                                    {
+                                        message = sr.ReadLine();
+                                        string[] line = all.Split("\n");
 
-            writer.Dispose();
-            reader.Dispose();
-            pipeServer.Dispose();
+                                        if (message == "Title_IN")
+                                        {
+                                            titles.Clear();
+                                            int i = 1;
+                                            bool t = false;
+                                            while (line[i] != "Title_OUT")
+                                            {
+                                                if (!titles.Contains(line[i]))
+                                                    titles.Add(line[i]); logger.LogInformation($"Ttiles ADD: {line[i]}");
+                                                i++;
+                                                if (line[i] == "Title_OUT") { t = true; break; }
+                                            }
+                                            if (t == true)
+                                            {
+
+                                                i++;
+                                                target = line[i];
+                                                i++;
+                                                pass = line[i];
+                                                i++;
+                                                email = line[i];
+                                                i++;
+                                                start = TimeSpan.Parse(line[i]);
+                                                i++;
+                                                stop = TimeSpan.Parse(line[i]);
+                                                logger.LogInformation($"Data ADD: {target},{pass},{email},{start},{stop}");
+                                                Supervise();
+                                               // pipeServer.Disconnect();
+                                            }
+                                        }
+                                        else if (message == "Start_P_List")
+                                        {
+                                            int i = 1;
+                                            while (line[i] != "Stop_P_List")
+                                            {
+                                                kill.Add(line[i]);           logger.LogInformation($"Kill ADD: {line[i]}");
+                                                i++;
+                                            }
+                                        }
+                                    }
+                            }
+                            if (test == true)
+                            {
+                                // writer.WriteLine("Supervising");
+                                // writer.FlushAsync();
+                                if (reader.ReadLine() == "Stop_supervise")
+                                {
+                                    Send_Email_with_File();
+                                    test = false;
+                                    pipeServer.WaitForPipeDrain();
+                                }
+                               // pipeServer.Disconnect();
+                            }
+                        }
+                    }
+                }
+                pipeServer.Disconnect();
+               // pipe.Abort();
+            }
+            }
         }
 
         List<string> kill = new List<string>();
@@ -183,14 +227,20 @@ namespace Work_serv
         }
 
         public void MonitorProcessActivity()
-        { 
-            Process[] processes = Process.GetProcesses();
-            foreach (Process process in processes)
+        {
+            Process[] processes = null;
+            try {processes = Process.GetProcesses(); } catch(Exception ex) { logger.LogError("NU IA PROCESELE"); }
+            foreach (Process process in processes.Where(x => x.MainWindowTitle.Length > 0))
             {
-                    if ((process.MainWindowTitle.Length > 0) && (!process.MainWindowTitle.Equals("Settings")) && (!process.MainWindowTitle.Equals("Microsoft Text Input Application")))
+                logger.LogInformation($"Intra in foreach in monitor -> {process.MainWindowTitle}");
+                try
+                {
+                    if ((!process.MainWindowTitle.Equals("Settings")) && (!process.MainWindowTitle.Equals("Microsoft Text Input Application")))
                     {
+                        logger.LogInformation($"trece de if ala mare cu : {process.MainWindowTitle}");
                         if (!kill.Contains(process.ProcessName))
                         {
+                            logger.LogInformation("Trece de kill");
                             DateTime startTime = process.StartTime;
                             TimeSpan activeDuration;
                             if (!process.HasExited)
@@ -222,7 +272,9 @@ namespace Work_serv
                                     //  };
                                     // var result = ML_Model.Predict(sampleData);
                                     // activity.Type = result.PredictedLabel;
+                                    //logger.LogInformation("ADDED:");
                                     processActivities.Add(activity);
+                                    //logger.LogInformation(activity.MainWindowTitle);
                                 }
                                 else
                                 {
@@ -246,6 +298,7 @@ namespace Work_serv
                                     // var result = ML_Model.Predict(sampleData);
                                     // activity.Type = result.PredictedLabel;
                                     Bad.Add(activity);
+                                    logger.LogInformation($"Adauga in Bad pe {activity.MainWindowTitle}");
                                 }
                                 else
                                 {
@@ -267,6 +320,7 @@ namespace Work_serv
                                     // var result = ML_Model.Predict(sampleData);
                                     // activity.Type = result.PredictedLabel;
                                     processActivities.Add(activity);
+                                    logger.LogInformation($"Adauga in Activity pe {activity.MainWindowTitle}");
                                 }
                                 else
                                 {
@@ -280,30 +334,35 @@ namespace Work_serv
                         }
                         else process.Kill();
                     }
+                }
+                catch(Exception ex)
+                {
+                    logger.LogError($"Exception:{ex}");
+                }
             }
         }
 
         static int interval = 30;
-        int pipe = 0;
-        int maintenance = 0;
+
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            if (maintenance == 0) { Maintenance(); maintenance++; }
-            if (pipe == 0) { Pipe_S(); pipe++; }
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
                     MonitorProcessActivity();
                 }
-                catch(Exception ex) { logger.LogError(ex,ex.Message); }
-                await Task.Delay(interval,stoppingToken);
+                catch (Exception ex) { logger.LogError(ex, ex.Message); }
+                await Task.Delay(interval, stoppingToken);
             }
         }
         public override Task StartAsync(CancellationToken cancellationToken)
         {
             Get_Timer();
+            Maintenance();
+            Thread pipe = new Thread(new ThreadStart(Pipe_S));
+            pipe.Start();
             logger.LogInformation("Started");
             return base.StartAsync(cancellationToken);
         }
