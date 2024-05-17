@@ -4,15 +4,15 @@
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="Supervisor.ProductivityPage"
              Title="Productivity">
-<ScrollView>
-<VerticalStackLayout>
-        <Label 
+    <ScrollView>
+        <VerticalStackLayout>
+            <Label 
             Text="Let's set you up for productivity!"
             TextColor="Blue"
             VerticalOptions="Start" 
             HorizontalOptions="Center"
             FontSize="Header"/>
-        <Label 
+            <!--    <Label 
             Text="Allowed Areas of Proccesses"
             TextColor="Blue"
             Margin="15"
@@ -99,8 +99,8 @@
                 TextColor="Blue"
                 Text="Gaming"
                 VerticalOptions="Center" />
-        </StackLayout>
-       
+        </StackLayout> -->
+
             <Label
             Text="Restricted folder (process will be terminated)"
             TextColor="Blue"
@@ -135,7 +135,7 @@
                                 <MenuItem Text="Delete"
                                           Clicked="Delete_Clicked"
                                           CommandParameter="{Binding .}"></MenuItem>
-                            </ViewCell.ContextActions> 
+                            </ViewCell.ContextActions>
                         </ViewCell>
                     </DataTemplate>
                 </ListView.ItemTemplate>
@@ -153,49 +153,37 @@
             <VerticalStackLayout>
                 <HorizontalStackLayout Spacing="10" Margin="20"
                                    VerticalOptions="Start" HorizontalOptions="Start">
-                <Label Text="Set Daily Gaming Time Limit:  " 
-                       TextColor="Blue"/>
-                <Entry
-                    Placeholder="0"
-                    PlaceholderColor="Blue"
-                    Keyboard="Numeric"
-                    VerticalOptions="Center"/>
-                <Label 
-                    Text="minutes"
-                    VerticalOptions="End"
-                    TextColor="Blue"/>
-            </HorizontalStackLayout>
-            <HorizontalStackLayout Spacing="10" Margin="20"
+                    <Label Text="Set Daily Gaming Time Limit:  " 
+                       TextColor="Blue"
+                       VerticalOptions="Center"/>
+                    <TimePicker Visual="Default" TextColor="Blue" Format="HH:mm" x:Name="game_ing"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="10" Margin="20"
                                    VerticalOptions="Start" HorizontalOptions="Start">
-                <Label Text="Set Daily Entertainment Time Limit:  " 
-                       TextColor="Blue"/>
-                <Entry
-                    Placeholder="0"
-                    PlaceholderColor="Blue"
-                    Keyboard="Numeric"
-                    VerticalOptions="Center"/>
-                <Label 
-                    Text="minutes"
-                    VerticalOptions="End"
-                    TextColor="Blue"/>
-            </HorizontalStackLayout>
-            <HorizontalStackLayout Spacing="10" Margin="20"
+                    <Label Text="Set Daily Entertainment Time Limit:  " 
+                       TextColor="Blue"
+                       VerticalOptions="Center"/>
+                    <TimePicker Visual="Default" TextColor="Blue" Format="HH:mm" x:Name="enter_tain"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="10" Margin="20"
                                    VerticalOptions="Start" HorizontalOptions="Start">
-                <Label Text="Set Daily Social Media Time Limit:  " 
-                       TextColor="Blue"/>
-                <Entry
-                    Placeholder="0"
-                    PlaceholderColor="Blue"
-                    Keyboard="Numeric"
-                    VerticalOptions="Center"/>
-                <Label 
-                    Text="minutes"
-                    TextColor="Blue"
-                    VerticalOptions="End"/>
-            </HorizontalStackLayout>
+                    <Label Text="Set Daily Social Media Time Limit:  " 
+                       TextColor="Blue"
+                       VerticalOptions="Center"/>
+                    <TimePicker Visual="Default" TextColor="Blue" Format="HH:mm" x:Name="social_med"/>
+                </HorizontalStackLayout>
             </VerticalStackLayout>
 
             <HorizontalStackLayout Margin="20" Spacing="20" VerticalOptions="Start" HorizontalOptions="Start">
+                <Button
+                 x:Name="Setting"
+                Text="Save Settings"
+                BackgroundColor="White"
+                TextColor="Blue"
+                Clicked="Setting_Clicked"
+                BorderColor="Black"
+                />
+
                 <Button
                  x:Name="Send"
                 Text="Send List"
@@ -204,6 +192,7 @@
                 Clicked="Send_Clicked"
                 BorderColor="Black"
                 />
+
                 <VerticalStackLayout>
                     <Button
                 x:Name="Service"
@@ -215,7 +204,7 @@
                 VerticalOptions="Start"
                 HorizontalOptions="Start"
                 />
-                <Label
+                    <Label
                 x:Name="Service_State"
                 Text="Service is Stopped"
                 TextColor="Blue"/>
